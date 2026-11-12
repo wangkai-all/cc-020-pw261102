@@ -7,3 +7,12 @@ node_modules/
 __pycache__/
 .claude/
 .cc-workbench/
+
+# 本地数据与运行产物
+data/
+data_e2e/
+.npm-cache/
+frontend/dist/
+*.db
+*.duckdb
+*.duckdb.wal

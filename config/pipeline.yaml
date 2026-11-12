@@ -1,0 +1,41 @@
+# 示例链路：订单清洗 -> 门店日汇总 -> 近三日滚动指标
+# product_daily 为独立分支，仅依赖源数据，与主链路互不影响。
+version: 1
+sources:
+  - name: orders_raw
+    table: orders_raw
+    partition_column: dt
+
+tasks:
+  - name: orders_clean
+    sql_file: ../sql/orders_clean.sql
+    partition_column: dt
+    inputs:
+      - source: orders_raw
+        offset: 0
+
+  - name: store_daily
+    sql_file: ../sql/store_daily.sql
+    partition_column: dt
+    inputs:
+      - task: orders_clean
+        offset: 0
+
+  - name: rolling_3d
+    sql_file: ../sql/rolling_3d.sql
+    partition_column: dt
+    # 显式依赖当天及前两天的门店分区：补数日期 d 会影响滚动结果 d、d+1、d+2
+    inputs:
+      - task: store_daily
+        offset: 0
+      - task: store_daily
+        offset: -1
+      - task: store_daily
+        offset: -2
+
+  - name: product_daily
+    sql_file: ../sql/product_daily.sql
+    partition_column: dt
+    inputs:
+      - source: orders_raw
+        offset: 0
